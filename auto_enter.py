@@ -1,4 +1,4 @@
-﻿import ctypes
+import ctypes
 from ctypes import wintypes
 import datetime
 import threading
@@ -588,8 +588,16 @@ class AutoEnterQueueApp:
 
     def update_treeview(self):
         now = datetime.datetime.now()
-        self.tree.delete(*self.tree.get_children())
-        for t in self.tasks:
+
+        existing_iids = set(self.tree.get_children())
+        current_iids = set(str(t["id"]) for t in self.tasks)
+
+        # 삭제된 작업만 제거
+        for old_iid in existing_iids - current_iids:
+            self.tree.delete(old_iid)
+
+        for idx, t in enumerate(self.tasks):
+            t_id = str(t["id"])
             diff = (t["target_time"] - now).total_seconds()
             if t["status"] == "대기 중":
                 if diff > 0:
@@ -603,13 +611,14 @@ class AutoEnterQueueApp:
                 remain_str = "-"
 
             p_preview = t["prompt"][:22].replace("\n", " ") + "..." if len(t["prompt"]) > 22 else (t["prompt"].replace("\n", " ") if t["prompt"] else "(엔터만)")
+            vals = (f"#{t['id']}", t["time_display"], remain_str, t["title"][:22], p_preview, t["status"])
 
-            self.tree.insert(
-                "",
-                tk.END,
-                iid=str(t["id"]),
-                values=(f"#{t['id']}", t["time_display"], remain_str, t["title"][:22], p_preview, t["status"])
-            )
+            if self.tree.exists(t_id):
+                self.tree.item(t_id, values=vals)
+            else:
+                self.tree.insert("", tk.END, iid=t_id, values=vals)
+
+            self.tree.move(t_id, "", idx)
 
     def delete_selected_task(self):
         selected = self.tree.selection()
