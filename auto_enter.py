@@ -150,7 +150,7 @@ def mouse_click_at(x, y):
     user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     time.sleep(0.08)
     user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-    time.sleep(0.35)  # 입력창 포커스가 안착될 때까지 대기
+    time.sleep(0.35)
 
 
 def send_ctrl_v():
@@ -162,7 +162,7 @@ def send_ctrl_v():
     user32.keybd_event(VK_V, 0, KEYEVENTF_KEYUP, 0)
     time.sleep(0.08)
     user32.keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0)
-    time.sleep(0.35)  # 텍스트가 브라우저에 렌더링될 시간 확보
+    time.sleep(0.35)
 
 
 def send_enter_key():
@@ -176,8 +176,8 @@ def send_enter_key():
 class AutoEnterQueueApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("AI Agent 자동 프롬프트 입력기 (작업 큐 에디션)")
-        self.root.geometry("680x880")
+        self.root.title("AI & 메신저 자동 메시지/프롬프트 전송기 (반복 & 편집 에디션)")
+        self.root.geometry("740x940")
         self.root.resizable(False, False)
         self.root.configure(bg="#F1F5F9")
 
@@ -191,6 +191,7 @@ class AutoEnterQueueApp:
         self.tasks = []
         self.task_counter = 1
         self.is_running = False
+        self.editing_task_id = None
 
         self.setup_ui()
         self.refresh_windows()
@@ -212,8 +213,8 @@ class AutoEnterQueueApp:
 
         title_frame = tk.Frame(top_bar, bg="#F1F5F9")
         title_frame.pack(side=tk.LEFT)
-        tk.Label(title_frame, text="🤖 AI 세션 자동 프롬프트 입력기", font=("Segoe UI", 12, "bold"), fg="#0F172A", bg="#F1F5F9").pack(anchor="w")
-        tk.Label(title_frame, text="입력창 자동 클릭 ➜ 프롬프트 붙여넣기 ➜ Enter 자동 전송", font=("Segoe UI", 8), fg="#64748B", bg="#F1F5F9").pack(anchor="w")
+        tk.Label(title_frame, text="🤖 AI & 메신저 자동 메시지 전송기", font=("Segoe UI", 12, "bold"), fg="#0F172A", bg="#F1F5F9").pack(anchor="w")
+        tk.Label(title_frame, text="입력창 자동 클릭 ➜ 프롬프트 붙여넣기 ➜ Enter (반복 예약 & 큐 수정 지원)", font=("Segoe UI", 8), fg="#64748B", bg="#F1F5F9").pack(anchor="w")
 
         clock_frame = tk.Frame(top_bar, bg="#FFFFFF", padx=10, pady=4, relief="solid", bd=1)
         clock_frame.pack(side=tk.RIGHT)
@@ -222,13 +223,13 @@ class AutoEnterQueueApp:
         self.lbl_now.pack()
 
         # 2. 대상 창 및 입력 위치 지정 카드
-        target_card = tk.LabelFrame(main_frame, text=" 1. 대상 창 및 입력 위치 지정 (호스트 또는 샌드박스) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=8)
-        target_card.pack(fill=tk.X, pady=(0, 8))
+        target_card = tk.LabelFrame(main_frame, text=" 1. 대상 창 및 입력 위치 지정 (메신저, 브라우저, 샌드박스 등) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=6)
+        target_card.pack(fill=tk.X, pady=(0, 6))
 
         combo_frame = tk.Frame(target_card, bg="#FFFFFF")
         combo_frame.pack(fill=tk.X, pady=(0, 4))
 
-        self.window_combo = ttk.Combobox(combo_frame, state="readonly", width=44, font=("Segoe UI", 9))
+        self.window_combo = ttk.Combobox(combo_frame, state="readonly", width=46, font=("Segoe UI", 9))
         self.window_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
         self.window_combo.bind("<<ComboboxSelected>>", self.on_window_selected)
 
@@ -255,27 +256,27 @@ class AutoEnterQueueApp:
             font=("Segoe UI", 8, "bold"),
             anchor="w",
             padx=8,
-            pady=4,
+            pady=3,
             relief="solid",
             bd=1
         )
         self.lbl_selected_info.pack(fill=tk.X, pady=(2, 0))
 
-        # 3. 프롬프트 내용 및 예약 시각 설정 카드
-        prompt_card = tk.LabelFrame(main_frame, text=" 2. 전송할 프롬프트 및 예약 시간 설정 ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=8)
-        prompt_card.pack(fill=tk.X, pady=(0, 8))
+        # 3. 프롬프트 & 시작 시간 & 반복 설정 카드
+        setting_card = tk.LabelFrame(main_frame, text=" 2. 메시지 내용, 시작 시간 및 반복 설정 ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=6)
+        setting_card.pack(fill=tk.X, pady=(0, 6))
 
-        tk.Label(prompt_card, text="전송할 프롬프트 내용 (비워두면 기존처럼 Enter만 전송):", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#475569").pack(anchor="w")
+        tk.Label(setting_card, text="전송할 메시지 / 프롬프트 (비워두면 Enter만 전송):", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#475569").pack(anchor="w")
 
-        self.txt_prompt = tk.Text(prompt_card, height=3, font=("Segoe UI", 9), wrap=tk.WORD, relief="solid", bd=1)
-        self.txt_prompt.pack(fill=tk.X, pady=(2, 6))
+        self.txt_prompt = tk.Text(setting_card, height=2, font=("Segoe UI", 9), wrap=tk.WORD, relief="solid", bd=1)
+        self.txt_prompt.pack(fill=tk.X, pady=(2, 4))
         self.txt_prompt.insert("1.0", "다음 작업을 이어서 진행해줘.")
 
-        # 시각 입력 줄
-        time_input_row = tk.Frame(prompt_card, bg="#FFFFFF")
+        # 시작 시각 입력 줄
+        time_input_row = tk.Frame(setting_card, bg="#FFFFFF")
         time_input_row.pack(fill=tk.X, pady=(0, 4))
 
-        tk.Label(time_input_row, text="컴퓨터 시각  ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", fg="#334155").pack(side=tk.LEFT)
+        tk.Label(time_input_row, text="시작 시각(컴퓨터 기준)  ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", fg="#334155").pack(side=tk.LEFT)
 
         self.sp_hours = tk.Spinbox(time_input_row, from_=0, to=23, width=3, font=("Consolas", 11, "bold"), justify="center", format="%02.0f")
         self.sp_hours.pack(side=tk.LEFT)
@@ -298,39 +299,114 @@ class AutoEnterQueueApp:
         default_target = datetime.datetime.now() + datetime.timedelta(minutes=30)
         self.set_time_inputs(default_target.hour, default_target.minute, 0)
 
-        # [➕ 큐에 추가] 버튼
-        self.btn_add_queue = tk.Button(
-            prompt_card,
-            text="➕ 위 설정(프롬프트 + 시각 + 위치)을 작업 큐에 추가하기",
+        # ---------------- 반복 실행 옵션 영역 ----------------
+        repeat_box = tk.LabelFrame(setting_card, text=" 🔁 주기적 반복 실행 옵션 ", bg="#F8FAFC", fg="#0F172A", font=("Segoe UI", 8, "bold"), padx=8, pady=4)
+        repeat_box.pack(fill=tk.X, pady=(4, 6))
+
+        self.chk_repeat = tk.BooleanVar(value=False)
+        chk_rep_btn = tk.Checkbutton(
+            repeat_box,
+            text="이 작업을 주기적으로 반복 실행하기 (메신저 정기 알림 / 주기적 작업)",
+            variable=self.chk_repeat,
+            bg="#F8FAFC",
+            font=("Segoe UI", 9, "bold"),
+            fg="#1D4ED8",
+            command=self.toggle_repeat_ui
+        )
+        chk_rep_btn.pack(anchor="w")
+
+        self.frame_repeat_detail = tk.Frame(repeat_box, bg="#F8FAFC")
+        self.frame_repeat_detail.pack(fill=tk.X, padx=12, pady=(2, 2))
+
+        row_interval = tk.Frame(self.frame_repeat_detail, bg="#F8FAFC")
+        row_interval.pack(anchor="w", pady=(0, 4))
+        tk.Label(row_interval, text="반복 주기:  매 ", font=("Segoe UI", 9), bg="#F8FAFC").pack(side=tk.LEFT)
+        self.sp_interval = tk.Spinbox(row_interval, from_=1, to=999, width=4, font=("Consolas", 10, "bold"), justify="center")
+        self.sp_interval.pack(side=tk.LEFT)
+        self.sp_interval.delete(0, "end")
+        self.sp_interval.insert(0, "30")
+
+        self.interval_unit_var = tk.StringVar(value="분")
+        self.combo_unit = ttk.Combobox(row_interval, textvariable=self.interval_unit_var, values=["분", "시간"], width=4, state="readonly")
+        self.combo_unit.pack(side=tk.LEFT, padx=(4, 4))
+        tk.Label(row_interval, text="마다 자동 재전송", font=("Segoe UI", 9), bg="#F8FAFC").pack(side=tk.LEFT)
+
+        row_end = tk.Frame(self.frame_repeat_detail, bg="#F8FAFC")
+        row_end.pack(anchor="w")
+
+        self.repeat_mode_var = tk.StringVar(value="infinite")
+
+        r_inf = tk.Radiobutton(row_end, text="무한 반복 (중지할 때까지)", variable=self.repeat_mode_var, value="infinite", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_inf.pack(side=tk.LEFT, padx=(0, 10))
+
+        r_until = tk.Radiobutton(row_end, text="종료 시각:", variable=self.repeat_mode_var, value="until_time", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_until.pack(side=tk.LEFT)
+        self.entry_until = tk.Entry(row_end, width=8, font=("Consolas", 9), justify="center")
+        self.entry_until.insert(0, (datetime.datetime.now() + datetime.timedelta(hours=6)).strftime("%H:%M:%S"))
+        self.entry_until.pack(side=tk.LEFT, padx=(2, 10))
+
+        r_count = tk.Radiobutton(row_end, text="횟수 제한: 총", variable=self.repeat_mode_var, value="max_count", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_count.pack(side=tk.LEFT)
+        self.sp_max_count = tk.Spinbox(row_end, from_=1, to=9999, width=4, font=("Consolas", 9), justify="center")
+        self.sp_max_count.delete(0, "end")
+        self.sp_max_count.insert(0, "10")
+        self.sp_max_count.pack(side=tk.LEFT, padx=(2, 2))
+        tk.Label(row_end, text="회 실행 후 종료", font=("Segoe UI", 8), bg="#F8FAFC").pack(side=tk.LEFT)
+
+        self.toggle_repeat_ui()
+
+        # [➕ 큐에 추가] / [💾 수정 저장] / [취소] 버튼 프레임
+        btn_action_card = tk.Frame(setting_card, bg="#FFFFFF")
+        btn_action_card.pack(fill=tk.X, pady=(4, 0))
+
+        self.btn_submit_task = tk.Button(
+            btn_action_card,
+            text="➕ 위 설정(메시지 + 시각 + 반복)을 작업 큐에 추가하기",
             bg="#2563EB",
             fg="#FFFFFF",
             font=("Segoe UI", 10, "bold"),
             pady=5,
             relief="flat",
             cursor="hand2",
-            command=self.add_task_to_queue
+            command=self.submit_task
         )
-        self.btn_add_queue.pack(fill=tk.X, pady=(4, 0))
+        self.btn_submit_task.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.btn_cancel_edit = tk.Button(
+            btn_action_card,
+            text="수정 취소",
+            bg="#94A3B8",
+            fg="#FFFFFF",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=5,
+            relief="flat",
+            command=self.cancel_edit
+        )
 
         # 4. 예약 작업 큐 테이블 (Treeview)
-        queue_card = tk.LabelFrame(main_frame, text=" 3. 예약 작업 큐 목록 (순서대로 자동 실행) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=8, pady=6)
+        queue_card = tk.LabelFrame(main_frame, text=" 3. 예약 작업 큐 목록 (더블클릭하여 수정 가능) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=8, pady=4)
         queue_card.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
 
-        columns = ("id", "time", "remain", "target", "prompt", "status")
+        columns = ("id", "time", "remain", "target", "repeat", "prompt", "status")
         self.tree = ttk.Treeview(queue_card, columns=columns, show="headings", height=5)
         self.tree.heading("id", text="순번", anchor="center")
         self.tree.heading("time", text="예약 시각", anchor="center")
         self.tree.heading("remain", text="남은 시간", anchor="center")
         self.tree.heading("target", text="대상 창", anchor="w")
-        self.tree.heading("prompt", text="프롬프트 내용", anchor="w")
+        self.tree.heading("repeat", text="반복 설정", anchor="center")
+        self.tree.heading("prompt", text="메시지 / 프롬프트", anchor="w")
         self.tree.heading("status", text="상태", anchor="center")
 
-        self.tree.column("id", width=38, anchor="center")
-        self.tree.column("time", width=115, anchor="center")
-        self.tree.column("remain", width=85, anchor="center")
-        self.tree.column("target", width=160, anchor="w")
-        self.tree.column("prompt", width=180, anchor="w")
-        self.tree.column("status", width=65, anchor="center")
+        self.tree.column("id", width=36, anchor="center")
+        self.tree.column("time", width=110, anchor="center")
+        self.tree.column("remain", width=80, anchor="center")
+        self.tree.column("target", width=130, anchor="w")
+        self.tree.column("repeat", width=95, anchor="center")
+        self.tree.column("prompt", width=150, anchor="w")
+        self.tree.column("status", width=75, anchor="center")
+
+        self.tree.bind("<Double-1>", self.on_tree_double_click)
 
         tree_scroll = ttk.Scrollbar(queue_card, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=tree_scroll.set)
@@ -341,6 +417,9 @@ class AutoEnterQueueApp:
         # 큐 관리 버튼 바
         q_btn_bar = tk.Frame(main_frame, bg="#F1F5F9")
         q_btn_bar.pack(fill=tk.X, pady=(0, 6))
+
+        btn_edit = tk.Button(q_btn_bar, text="✏️ 선택 작업 수정", font=("Segoe UI", 8, "bold"), bg="#E0E7FF", fg="#3730A3", padx=6, pady=2, command=self.start_edit_selected)
+        btn_edit.pack(side=tk.LEFT, padx=(0, 6))
 
         btn_del = tk.Button(q_btn_bar, text="🗑 선택 항목 삭제", font=("Segoe UI", 8), bg="#FEE2E2", fg="#991B1B", padx=6, pady=2, command=self.delete_selected_task)
         btn_del.pack(side=tk.LEFT, padx=(0, 6))
@@ -353,7 +432,7 @@ class AutoEnterQueueApp:
         c1.pack(side=tk.RIGHT)
 
         # 5. 현재 카운트다운 박스
-        status_card = tk.Frame(main_frame, bg="#FFFFFF", bd=1, relief="solid", pady=5)
+        status_card = tk.Frame(main_frame, bg="#FFFFFF", bd=1, relief="solid", pady=4)
         status_card.pack(fill=tk.X, pady=(0, 6))
 
         self.lbl_target_info = tk.Label(status_card, text="큐 실행 대기 중 (작업 추가 후 아래 [▶ 큐 순차 실행 시작] 클릭)", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#64748B")
@@ -375,12 +454,25 @@ class AutoEnterQueueApp:
         # 7. 실시간 로그 창
         self.log_text = tk.Text(main_frame, height=4, font=("Consolas", 8), bg="#FFFFFF", fg="#334155", relief="solid", bd=1)
         self.log_text.pack(fill=tk.BOTH, expand=True)
-        self.log("프로그램이 시작되었습니다.")
+        self.log("프로그램이 시작되었습니다. 작업을 등록하거나 더블클릭하여 수정할 수 있습니다.")
 
     def log(self, message):
         now_str = datetime.datetime.now().strftime("%H:%M:%S")
         self.log_text.insert(tk.END, f"[{now_str}] {message}\n")
         self.log_text.see(tk.END)
+
+    def toggle_repeat_ui(self):
+        is_rep = self.chk_repeat.get()
+        state = "normal" if is_rep else "disabled"
+        self.sp_interval.config(state=state)
+        self.combo_unit.config(state="readonly" if is_rep else "disabled")
+        self.update_end_condition_ui()
+
+    def update_end_condition_ui(self):
+        is_rep = self.chk_repeat.get()
+        mode = self.repeat_mode_var.get()
+        self.entry_until.config(state="normal" if (is_rep and mode == "until_time") else "disabled")
+        self.sp_max_count.config(state="normal" if (is_rep and mode == "max_count") else "disabled")
 
     def update_clock_loop(self):
         now = datetime.datetime.now()
@@ -421,11 +513,9 @@ class AutoEnterQueueApp:
         matched_index = None
         for i, (hwnd, title) in enumerate(self.window_list):
             tl = title.lower()
-            if "sandbox" in tl or "샌드박스" in tl:
+            if any(k in tl for k in ("sandbox", "샌드박스", "codex", "chatgpt", "카카오톡", "kakao", "discord", "slack")):
                 matched_index = i
                 break
-            elif "codex" in tl or "chatgpt" in tl:
-                matched_index = i
 
         if matched_index is not None:
             self.window_combo.current(matched_index)
@@ -496,14 +586,12 @@ class AutoEnterQueueApp:
         prompt = self.txt_prompt.get("1.0", tk.END).rstrip("\r\n")
 
         def run_test():
-            self.log("[테스트 시작] 3초 후 포커스 ➜ 클릭 ➜ 프롬프트 붙여넣기 ➜ Enter를 실행합니다...")
+            self.log("[테스트 시작] 3초 후 포커스 ➜ 클릭 ➜ 붙여넣기 ➜ Enter를 실행합니다...")
             time.sleep(3)
             try:
-                # 1. 포커스
                 force_foreground_window(self.selected_hwnd)
                 self.log("1. 대상 창 최상단 활성화 완료")
 
-                # 2. 마우스 클릭 (좌표가 있을 때)
                 if self.click_rel_x is not None and self.click_rel_y is not None:
                     rect = wintypes.RECT()
                     user32.GetWindowRect(self.selected_hwnd, ctypes.byref(rect))
@@ -514,32 +602,30 @@ class AutoEnterQueueApp:
                 else:
                     self.log("2. 지정 좌표 없음 (기존 커서 포커스 유지)")
 
-                # 3. 프롬프트 복사 및 붙여넣기
                 if prompt:
                     ok = set_clipboard_text(prompt)
                     if not ok:
-                        # 폴백
                         self.root.clipboard_clear()
                         self.root.clipboard_append(prompt)
                         self.root.update()
-                    self.log(f"3. 클립보드 복사 완료 (길이: {len(prompt)}자)")
+                    self.log(f"3. 클립보드 복사 완료 ({len(prompt)}자)")
                     time.sleep(0.15)
                     send_ctrl_v()
                     self.log("4. Ctrl+V 키 전송 완료")
                 else:
-                    self.log("3. 프롬프트가 비어 있어 텍스트 입력은 건너뜁니다.")
+                    self.log("3. 메시지가 비어 있어 텍스트 입력은 건너뜁니다.")
 
-                # 4. 엔터
                 send_enter_key()
                 self.log("5. Enter 키 전송 완료")
-                self.log(">>> [테스트 완료] 모든 과정이 성공적으로 완료되었습니다!")
+                self.log(">>> [테스트 완료] 모든 과정이 정상 작동합니다!")
                 winsound.MessageBeep(winsound.MB_ICONASTERISK)
             except Exception as e:
                 self.log(f"[테스트 에러] {str(e)}")
 
         threading.Thread(target=run_test, daemon=True).start()
 
-    def add_task_to_queue(self):
+    def submit_task(self):
+        """작업 추가 또는 수정 완료를 처리합니다."""
         if not self.selected_hwnd or not user32.IsWindow(self.selected_hwnd):
             messagebox.showwarning("경고", "먼저 대상 창을 선택해주세요.")
             return
@@ -564,27 +650,181 @@ class AutoEnterQueueApp:
         else:
             time_display = f"오늘 {target.strftime('%H:%M:%S')}"
 
-        task = {
-            "id": self.task_counter,
-            "target_time": target,
-            "time_display": time_display,
-            "hwnd": self.selected_hwnd,
-            "title": self.selected_title,
-            "prompt": prompt,
-            "rel_x": self.click_rel_x,
-            "rel_y": self.click_rel_y,
-            "status": "대기 중"
-        }
-        self.task_counter += 1
-        self.tasks.append(task)
+        # 반복 옵션 파싱
+        is_repeat = self.chk_repeat.get()
+        interval_val = 30
+        interval_unit = "분"
+        interval_minutes = 30
+        repeat_mode = "infinite"
+        until_time = None
+        max_count = None
+
+        if is_repeat:
+            try:
+                interval_val = int(self.sp_interval.get())
+                if interval_val <= 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror("입력 오류", "반복 주기는 1 이상의 숫자로 입력해주세요.")
+                return
+
+            interval_unit = self.interval_unit_var.get()
+            interval_minutes = interval_val if interval_unit == "분" else (interval_val * 60)
+            repeat_mode = self.repeat_mode_var.get()
+
+            if repeat_mode == "until_time":
+                time_str = self.entry_until.get().strip()
+                try:
+                    parts = [int(p) for p in time_str.split(":")]
+                    if len(parts) == 2:
+                        uh, um = parts
+                        us = 0
+                    elif len(parts) == 3:
+                        uh, um, us = parts
+                    else:
+                        raise ValueError
+                    until_today = now.replace(hour=uh, minute=um, second=us, microsecond=0)
+                    if until_today <= target:
+                        until_time = until_today + datetime.timedelta(days=1)
+                    else:
+                        until_time = until_today
+                except Exception:
+                    messagebox.showerror("입력 오류", "종료 시각 형식이 올바르지 않습니다 (예: 18:00:00).")
+                    return
+            elif repeat_mode == "max_count":
+                try:
+                    max_count = int(self.sp_max_count.get())
+                    if max_count <= 0:
+                        raise ValueError
+                except ValueError:
+                    messagebox.showerror("입력 오류", "반복 횟수는 1 이상의 숫자로 입력해주세요.")
+                    return
+
+        # 반복 표시 문자열
+        if not is_repeat:
+            repeat_display = "1회성"
+        else:
+            unit_str = f"매 {interval_val}{interval_unit}"
+            if repeat_mode == "infinite":
+                repeat_display = f"{unit_str} (무한)"
+            elif repeat_mode == "until_time":
+                repeat_display = f"{unit_str} (~{until_time.strftime('%H:%M')})"
+            else:
+                repeat_display = f"{unit_str} (총 {max_count}회)"
+
+        if self.editing_task_id is not None:
+            task = next((t for t in self.tasks if t["id"] == self.editing_task_id), None)
+            if task:
+                task["target_time"] = target
+                task["time_display"] = time_display
+                task["hwnd"] = self.selected_hwnd
+                task["title"] = self.selected_title
+                task["prompt"] = prompt
+                task["rel_x"] = self.click_rel_x
+                task["rel_y"] = self.click_rel_y
+                task["is_repeat"] = is_repeat
+                task["interval_val"] = interval_val
+                task["interval_unit"] = interval_unit
+                task["interval_minutes"] = interval_minutes
+                task["repeat_mode"] = repeat_mode
+                task["until_time"] = until_time
+                task["max_count"] = max_count
+                task["repeat_display"] = repeat_display
+                task["status"] = "대기 중"
+                self.log(f"✏️ [작업 #{task['id']} 수정 완료] 시각: {time_display} | 반복: {repeat_display}")
+            self.cancel_edit()
+        else:
+            task = {
+                "id": self.task_counter,
+                "target_time": target,
+                "time_display": time_display,
+                "hwnd": self.selected_hwnd,
+                "title": self.selected_title,
+                "prompt": prompt,
+                "rel_x": self.click_rel_x,
+                "rel_y": self.click_rel_y,
+                "is_repeat": is_repeat,
+                "interval_val": interval_val,
+                "interval_unit": interval_unit,
+                "interval_minutes": interval_minutes,
+                "repeat_mode": repeat_mode,
+                "until_time": until_time,
+                "max_count": max_count,
+                "repeat_display": repeat_display,
+                "run_count": 0,
+                "status": "대기 중"
+            }
+            self.task_counter += 1
+            self.tasks.append(task)
+            self.log(f"➕ [작업 #{task['id']} 등록] ({time_display}) | 반복: {repeat_display}")
+
+            next_suggest = target + datetime.timedelta(minutes=interval_minutes if is_repeat else 60)
+            self.set_time_inputs(next_suggest.hour, next_suggest.minute, 0)
+
         self.tasks.sort(key=lambda t: t["target_time"])
-
         self.update_treeview()
-        preview = prompt[:15] + "..." if len(prompt) > 15 else (prompt if prompt else "(엔터만)")
-        self.log(f"[큐 등록] #{task['id']} ({task['time_display']}) | 프롬프트: '{preview}'")
 
-        next_suggest = target + datetime.timedelta(hours=1)
-        self.set_time_inputs(next_suggest.hour, next_suggest.minute, 0)
+    def start_edit_selected(self):
+        """선택된 작업을 수정 모드로 불러옵니다."""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showinfo("안내", "수정할 작업을 목록에서 선택해주세요.")
+            return
+
+        t_id = int(selected[0])
+        task = next((t for t in self.tasks if t["id"] == t_id), None)
+        if not task:
+            return
+
+        self.editing_task_id = t_id
+
+        self.selected_hwnd = task["hwnd"]
+        self.selected_title = task["title"]
+        self.click_rel_x = task["rel_x"]
+        self.click_rel_y = task["rel_y"]
+        self.update_info_label()
+
+        for i, (hwnd, title) in enumerate(self.window_list):
+            if hwnd == task["hwnd"]:
+                self.window_combo.current(i)
+                break
+
+        t_time = task["target_time"]
+        self.set_time_inputs(t_time.hour, t_time.minute, t_time.second)
+
+        self.txt_prompt.delete("1.0", tk.END)
+        self.txt_prompt.insert("1.0", task.get("prompt", ""))
+
+        is_rep = task.get("is_repeat", False)
+        self.chk_repeat.set(is_rep)
+        if is_rep:
+            self.sp_interval.delete(0, "end")
+            self.sp_interval.insert(0, str(task.get("interval_val", 30)))
+            self.interval_unit_var.set(task.get("interval_unit", "분"))
+            self.repeat_mode_var.set(task.get("repeat_mode", "infinite"))
+            if task.get("until_time"):
+                self.entry_until.delete(0, "end")
+                self.entry_until.insert(0, task["until_time"].strftime("%H:%M:%S"))
+            if task.get("max_count"):
+                self.sp_max_count.delete(0, "end")
+                self.sp_max_count.insert(0, str(task["max_count"]))
+        self.toggle_repeat_ui()
+
+        self.btn_submit_task.config(text=f"💾 [#{t_id}번 작업] 수정 내용 저장하기", bg="#4F46E5")
+        self.btn_cancel_edit.pack(side=tk.RIGHT, padx=(6, 0))
+        self.log(f"✏️ [#{t_id}번 작업] 편집 모드 활성화 (내용 수정 후 [수정 내용 저장하기] 클릭)")
+
+    def on_tree_double_click(self, event):
+        item = self.tree.identify_row(event.y)
+        if item:
+            self.tree.selection_set(item)
+            self.start_edit_selected()
+
+    def cancel_edit(self):
+        self.editing_task_id = None
+        self.btn_submit_task.config(text="➕ 위 설정(메시지 + 시각 + 반복)을 작업 큐에 추가하기", bg="#2563EB")
+        self.btn_cancel_edit.pack_forget()
+        self.log("작업 수정 모드가 취소되었습니다.")
 
     def update_treeview(self):
         now = datetime.datetime.now()
@@ -592,7 +832,6 @@ class AutoEnterQueueApp:
         existing_iids = set(self.tree.get_children())
         current_iids = set(str(t["id"]) for t in self.tasks)
 
-        # 삭제된 작업만 제거
         for old_iid in existing_iids - current_iids:
             self.tree.delete(old_iid)
 
@@ -610,8 +849,13 @@ class AutoEnterQueueApp:
             else:
                 remain_str = "-"
 
-            p_preview = t["prompt"][:22].replace("\n", " ") + "..." if len(t["prompt"]) > 22 else (t["prompt"].replace("\n", " ") if t["prompt"] else "(엔터만)")
-            vals = (f"#{t['id']}", t["time_display"], remain_str, t["title"][:22], p_preview, t["status"])
+            p_preview = t["prompt"][:18].replace("\n", " ") + "..." if len(t["prompt"]) > 18 else (t["prompt"].replace("\n", " ") if t["prompt"] else "(엔터만)")
+            rep_str = t.get("repeat_display", "1회성")
+            status_str = t["status"]
+            if t.get("is_repeat") and t.get("run_count", 0) > 0 and t["status"] == "대기 중":
+                status_str = f"반복중({t['run_count']}회)"
+
+            vals = (f"#{t['id']}", t["time_display"], remain_str, t["title"][:18], rep_str, p_preview, status_str)
 
             if self.tree.exists(t_id):
                 self.tree.item(t_id, values=vals)
@@ -628,6 +872,8 @@ class AutoEnterQueueApp:
         for item_id in selected:
             t_id = int(item_id)
             self.tasks = [t for t in self.tasks if t["id"] != t_id]
+            if self.editing_task_id == t_id:
+                self.cancel_edit()
         self.update_treeview()
         self.log("선택한 작업이 큐에서 삭제되었습니다.")
 
@@ -686,7 +932,7 @@ class AutoEnterQueueApp:
                         mins = int((diff % 3600) // 60)
                         secs = int(diff % 60)
                         time_str = f"{hours:02d} : {mins:02d} : {secs:02d}"
-                        info_str = f"다음 실행: [#{current_task['id']}] {current_task['time_display']} - {current_task['title'][:20]}"
+                        info_str = f"다음 실행: [#{current_task['id']}] {current_task['time_display']} - {current_task['title'][:18]}"
 
                         self.root.after(0, lambda s=time_str, i=info_str: (
                             self.lbl_countdown.config(text=s),
@@ -701,20 +947,18 @@ class AutoEnterQueueApp:
     def execute_task(self, task):
         task["status"] = "진행 중"
         self.update_treeview()
-        self.log(f"⏰ [작업 #{task['id']} 실행] 창 활성화 및 프롬프트 입력을 시작합니다...")
+        self.log(f"⏰ [작업 #{task['id']} 실행] 창 활성화 및 메시지 전송 시작...")
 
         try:
             hwnd = task["hwnd"]
             if not user32.IsWindow(hwnd):
                 task["status"] = "창 닫힘"
-                self.log(f"❌ [작업 #{task['id']} 실패] 대상 창이 닫혀 있어 다음 작업으로 건너뜁니다.")
+                self.log(f"❌ [작업 #{task['id']} 실패] 대상 창이 닫혀 있습니다.")
                 self.update_treeview()
                 return
 
-            # 1. 창 최상단 복원
             force_foreground_window(hwnd)
 
-            # 2. 마우스 클릭 (좌표가 지정된 경우)
             if task["rel_x"] is not None and task["rel_y"] is not None:
                 rect = wintypes.RECT()
                 user32.GetWindowRect(hwnd, ctypes.byref(rect))
@@ -723,7 +967,6 @@ class AutoEnterQueueApp:
                 mouse_click_at(cx, cy)
                 self.log(f"   입력 영역 마우스 클릭 완료 ({cx}, {cy})")
 
-            # 3. 프롬프트 복사 및 붙여넣기
             prompt = task.get("prompt", "").strip()
             if prompt:
                 ok = set_clipboard_text(prompt)
@@ -733,15 +976,48 @@ class AutoEnterQueueApp:
                     self.root.update()
                 time.sleep(0.15)
                 send_ctrl_v()
-                self.log(f"   프롬프트 내용 Ctrl+V 붙여넣기 완료 ({len(prompt)}자)")
+                self.log(f"   메시지 내용 붙여넣기 완료 ({len(prompt)}자)")
 
-            # 4. 엔터 입력
             send_enter_key()
-
-            task["status"] = "✅ 완료"
-            self.log(f"✅ [작업 #{task['id']} 성공] 프롬프트 전송 및 Enter 완료!")
+            task["run_count"] = task.get("run_count", 0) + 1
+            self.log(f"✅ [작업 #{task['id']} 전송 성공] (총 {task['run_count']}회 완료)")
             if self.chk_beep.get():
                 winsound.MessageBeep(winsound.MB_ICONASTERISK)
+
+            # 반복 처리 로직
+            if task.get("is_repeat"):
+                rep_mode = task.get("repeat_mode", "infinite")
+                max_cnt = task.get("max_count")
+                until_t = task.get("until_time")
+                interval_m = task.get("interval_minutes", 30)
+
+                should_continue = True
+                if rep_mode == "max_count" and task["run_count"] >= max_cnt:
+                    should_continue = False
+                    task["status"] = f"✅ 완료 ({task['run_count']}회)"
+                    self.log(f"🏁 [작업 #{task['id']} 반복 종료] 목표 횟수({max_cnt}회) 달성!")
+
+                if rep_mode == "until_time":
+                    next_t = task["target_time"] + datetime.timedelta(minutes=interval_m)
+                    if next_t > until_t:
+                        should_continue = False
+                        task["status"] = f"✅ 종료 (~{until_t.strftime('%H:%M')})"
+                        self.log(f"🏁 [작업 #{task['id']} 반복 종료] 지정 종료 시각 도달!")
+
+                if should_continue:
+                    next_t = task["target_time"] + datetime.timedelta(minutes=interval_m)
+                    task["target_time"] = next_t
+                    now = datetime.datetime.now()
+                    if next_t.date() > now.date():
+                        task["time_display"] = f"내일 {next_t.strftime('%H:%M:%S')}"
+                    else:
+                        task["time_display"] = f"오늘 {next_t.strftime('%H:%M:%S')}"
+                    task["status"] = "대기 중"
+                    self.log(f"🔁 [작업 #{task['id']} 자동 재예약] 다음 회차: {task['time_display']}")
+                    self.tasks.sort(key=lambda t: t["target_time"])
+            else:
+                task["status"] = "✅ 완료"
+
         except Exception as e:
             task["status"] = "오류"
             self.log(f"❌ [작업 #{task['id']} 에러] {str(e)}")
@@ -754,7 +1030,7 @@ class AutoEnterQueueApp:
         self.btn_stop.config(state=tk.DISABLED, bg="#CBD5E1", fg="#475569")
         self.lbl_target_info.config(text="🎉 모든 큐 예약 작업이 완료되었습니다!", fg="#15803D")
         self.lbl_countdown.config(text="00 : 00 : 00")
-        self.log("🎉 등록된 모든 큐 작업이 성공적으로 종료되었습니다!")
+        self.log("🎉 등록된 모든 큐 작업 처리가 완료되었습니다!")
         if self.chk_beep.get():
             winsound.MessageBeep(winsound.MB_ICONASTERISK)
 
