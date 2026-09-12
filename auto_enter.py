@@ -68,6 +68,11 @@ GA_ROOT = 2
 GMEM_MOVEABLE = 0x0002
 CF_UNICODETEXT = 13
 
+# 시스템 기본 표준 폰트 설정 (맑은 고딕 & Consolas)
+# 모든 글꼴에 bold를 주지 않고 일반 굵기(regular)를 사용하여 글씨가 뭉개지거나 너무 찐하게 보이는 현상을 방지
+FONT_MAIN = "맑은 고딕"
+FONT_MONO = "Consolas"
+
 
 def set_clipboard_text(text):
     """64비트 Windows 완벽 호환 Win32 API 클립보드 복사 함수."""
@@ -177,7 +182,7 @@ class AutoEnterQueueApp:
     def __init__(self, root):
         self.root = root
         self.root.title("AI & 메신저 자동 메시지/프롬프트 전송기 (반복 & 편집 에디션)")
-        self.root.geometry("740x940")
+        self.root.geometry("750x960")
         self.root.resizable(False, False)
         self.root.configure(bg="#F1F5F9")
 
@@ -201,8 +206,8 @@ class AutoEnterQueueApp:
     def setup_ui(self):
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
-        style.configure("Treeview", font=("Segoe UI", 9), rowheight=24)
+        style.configure("Treeview.Heading", font=(FONT_MAIN, 9, "bold"))
+        style.configure("Treeview", font=(FONT_MAIN, 9), rowheight=24)
 
         main_frame = ttk.Frame(self.root, padding="12")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -213,39 +218,39 @@ class AutoEnterQueueApp:
 
         title_frame = tk.Frame(top_bar, bg="#F1F5F9")
         title_frame.pack(side=tk.LEFT)
-        tk.Label(title_frame, text="🤖 AI & 메신저 자동 메시지 전송기", font=("Segoe UI", 12, "bold"), fg="#0F172A", bg="#F1F5F9").pack(anchor="w")
-        tk.Label(title_frame, text="입력창 자동 클릭 ➜ 프롬프트 붙여넣기 ➜ Enter (반복 예약 & 큐 수정 지원)", font=("Segoe UI", 8), fg="#64748B", bg="#F1F5F9").pack(anchor="w")
+        tk.Label(title_frame, text="🤖 AI & 메신저 자동 메시지 전송기", font=(FONT_MAIN, 12, "bold"), fg="#0F172A", bg="#F1F5F9").pack(anchor="w")
+        tk.Label(title_frame, text="입력창 자동 클릭 ➜ 프롬프트 붙여넣기 ➜ Enter (반복 예약 & 큐 수정 지원)", font=(FONT_MAIN, 8), fg="#64748B", bg="#F1F5F9").pack(anchor="w")
 
         clock_frame = tk.Frame(top_bar, bg="#FFFFFF", padx=10, pady=4, relief="solid", bd=1)
         clock_frame.pack(side=tk.RIGHT)
-        tk.Label(clock_frame, text="🕒 컴퓨터 현재 시각", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#475569").pack()
-        self.lbl_now = tk.Label(clock_frame, text="--:--:--", font=("Consolas", 14, "bold"), fg="#0284C7", bg="#FFFFFF")
+        tk.Label(clock_frame, text="🕒 컴퓨터 현재 시각", font=(FONT_MAIN, 8), bg="#FFFFFF", fg="#475569").pack()
+        self.lbl_now = tk.Label(clock_frame, text="--:--:--", font=(FONT_MONO, 14, "bold"), fg="#0284C7", bg="#FFFFFF")
         self.lbl_now.pack()
 
         # 2. 대상 창 및 입력 위치 지정 카드
-        target_card = tk.LabelFrame(main_frame, text=" 1. 대상 창 및 입력 위치 지정 (메신저, 브라우저, 샌드박스 등) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=6)
+        target_card = tk.LabelFrame(main_frame, text=" 1. 대상 창 및 입력 위치 지정 (메신저, 브라우저, 샌드박스 등) ", bg="#FFFFFF", fg="#1E293B", font=(FONT_MAIN, 9, "bold"), padx=10, pady=6)
         target_card.pack(fill=tk.X, pady=(0, 6))
 
         combo_frame = tk.Frame(target_card, bg="#FFFFFF")
         combo_frame.pack(fill=tk.X, pady=(0, 4))
 
-        self.window_combo = ttk.Combobox(combo_frame, state="readonly", width=46, font=("Segoe UI", 9))
+        self.window_combo = ttk.Combobox(combo_frame, state="readonly", width=46, font=(FONT_MAIN, 9))
         self.window_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
         self.window_combo.bind("<<ComboboxSelected>>", self.on_window_selected)
 
-        btn_refresh = tk.Button(combo_frame, text="🔄 새로고침", font=("Segoe UI", 9), bg="#F8FAFC", command=self.refresh_windows)
+        btn_refresh = tk.Button(combo_frame, text="🔄 새로고침", font=(FONT_MAIN, 9), bg="#F8FAFC", command=self.refresh_windows)
         btn_refresh.pack(side=tk.RIGHT)
 
         btn_bar = tk.Frame(target_card, bg="#FFFFFF")
         btn_bar.pack(fill=tk.X, pady=(2, 4))
 
-        self.btn_pick = tk.Button(btn_bar, text="🎯 입력 위치 찍기 (3초 카운트다운)", font=("Segoe UI", 9, "bold"), bg="#E0F2FE", fg="#0369A1", padx=8, pady=3, relief="groove", command=self.start_pick_position)
+        self.btn_pick = tk.Button(btn_bar, text="🎯 입력 위치 찍기 (3초 카운트다운)", font=(FONT_MAIN, 9), bg="#E0F2FE", fg="#0369A1", padx=8, pady=3, relief="groove", command=self.start_pick_position)
         self.btn_pick.pack(side=tk.LEFT, padx=(0, 6))
 
-        btn_clear_pos = tk.Button(btn_bar, text="위치 초기화", font=("Segoe UI", 8), bg="#F8FAFC", command=self.clear_position)
+        btn_clear_pos = tk.Button(btn_bar, text="위치 초기화", font=(FONT_MAIN, 8), bg="#F8FAFC", command=self.clear_position)
         btn_clear_pos.pack(side=tk.LEFT, padx=(0, 8))
 
-        btn_test = tk.Button(btn_bar, text="⚡ 즉시 테스트 (3초 뒤 클릭+붙여넣기+엔터)", font=("Segoe UI", 9), bg="#FEF3C7", fg="#B45309", padx=8, pady=3, relief="groove", command=self.test_full_action)
+        btn_test = tk.Button(btn_bar, text="⚡ 즉시 테스트 (3초 뒤 클릭+붙여넣기+엔터)", font=(FONT_MAIN, 9), bg="#FEF3C7", fg="#B45309", padx=8, pady=3, relief="groove", command=self.test_full_action)
         btn_test.pack(side=tk.LEFT)
 
         self.lbl_selected_info = tk.Label(
@@ -253,7 +258,7 @@ class AutoEnterQueueApp:
             text="선택된 창: 없음 | 입력 위치: 미지정 (창 포커스만 유지)",
             bg="#F0FDF4",
             fg="#15803D",
-            font=("Segoe UI", 8, "bold"),
+            font=(FONT_MAIN, 8),
             anchor="w",
             padx=8,
             pady=3,
@@ -263,45 +268,55 @@ class AutoEnterQueueApp:
         self.lbl_selected_info.pack(fill=tk.X, pady=(2, 0))
 
         # 3. 프롬프트 & 시작 시간 & 반복 설정 카드
-        setting_card = tk.LabelFrame(main_frame, text=" 2. 메시지 내용, 시작 시간 및 반복 설정 ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=10, pady=6)
+        setting_card = tk.LabelFrame(main_frame, text=" 2. 메시지 내용, 시작 시간 및 반복 설정 ", bg="#FFFFFF", fg="#1E293B", font=(FONT_MAIN, 9, "bold"), padx=10, pady=6)
         setting_card.pack(fill=tk.X, pady=(0, 6))
 
-        tk.Label(setting_card, text="전송할 메시지 / 프롬프트 (비워두면 Enter만 전송):", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#475569").pack(anchor="w")
+        tk.Label(setting_card, text="전송할 메시지 / 프롬프트 (비워두면 Enter만 전송):", font=(FONT_MAIN, 8), bg="#FFFFFF", fg="#475569").pack(anchor="w")
 
-        self.txt_prompt = tk.Text(setting_card, height=2, font=("Segoe UI", 9), wrap=tk.WORD, relief="solid", bd=1)
+        self.txt_prompt = tk.Text(setting_card, height=2, font=(FONT_MAIN, 9), wrap=tk.WORD, relief="solid", bd=1)
         self.txt_prompt.pack(fill=tk.X, pady=(2, 4))
         self.txt_prompt.insert("1.0", "다음 작업을 이어서 진행해줘.")
 
-        # 시작 시각 입력 줄
-        time_input_row = tk.Frame(setting_card, bg="#FFFFFF")
-        time_input_row.pack(fill=tk.X, pady=(0, 4))
+        # ---------------- 시작 시각 설정 영역 (큼직하고 누적 버튼 포함) ----------------
+        time_box = tk.Frame(setting_card, bg="#F8FAFC", bd=1, relief="solid", padx=10, pady=8)
+        time_box.pack(fill=tk.X, pady=(4, 6))
 
-        tk.Label(time_input_row, text="시작 시각(컴퓨터 기준)  ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", fg="#334155").pack(side=tk.LEFT)
+        # 1행: 큼직한 시계 입력 스핀박스
+        spin_row = tk.Frame(time_box, bg="#F8FAFC")
+        spin_row.pack(anchor="w", pady=(0, 6))
 
-        self.sp_hours = tk.Spinbox(time_input_row, from_=0, to=23, width=3, font=("Consolas", 11, "bold"), justify="center", format="%02.0f")
-        self.sp_hours.pack(side=tk.LEFT)
-        tk.Label(time_input_row, text=" 시  ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        tk.Label(spin_row, text="🕒 시작 시각 :  ", font=(FONT_MAIN, 11, "bold"), bg="#F8FAFC", fg="#1E293B").pack(side=tk.LEFT)
 
-        self.sp_mins = tk.Spinbox(time_input_row, from_=0, to=59, width=3, font=("Consolas", 11, "bold"), justify="center", format="%02.0f")
-        self.sp_mins.pack(side=tk.LEFT)
-        tk.Label(time_input_row, text=" 분  ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        self.sp_hours = tk.Spinbox(spin_row, from_=0, to=23, width=3, font=(FONT_MONO, 15, "bold"), justify="center", format="%02.0f", bd=2, relief="groove")
+        self.sp_hours.pack(side=tk.LEFT, ipady=3)
+        tk.Label(spin_row, text=" 시  ", font=(FONT_MAIN, 11), bg="#F8FAFC", fg="#334155").pack(side=tk.LEFT)
 
-        self.sp_secs = tk.Spinbox(time_input_row, from_=0, to=59, width=3, font=("Consolas", 11, "bold"), justify="center", format="%02.0f")
-        self.sp_secs.pack(side=tk.LEFT)
-        tk.Label(time_input_row, text=" 초", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", fg="#334155").pack(side=tk.LEFT)
+        self.sp_mins = tk.Spinbox(spin_row, from_=0, to=59, width=3, font=(FONT_MONO, 15, "bold"), justify="center", format="%02.0f", bd=2, relief="groove")
+        self.sp_mins.pack(side=tk.LEFT, ipady=3)
+        tk.Label(spin_row, text=" 분  ", font=(FONT_MAIN, 11), bg="#F8FAFC", fg="#334155").pack(side=tk.LEFT)
 
-        quick_frame = tk.Frame(time_input_row, bg="#FFFFFF")
-        quick_frame.pack(side=tk.RIGHT)
-        for text, delta_m in [("+10분", 10), ("+30분", 30), ("+1시간", 60), ("+2시간", 120)]:
-            b = tk.Button(quick_frame, text=text, font=("Segoe UI", 8), bg="#F8FAFC", padx=3, pady=1, command=lambda dm=delta_m: self.quick_set_time(dm))
-            b.pack(side=tk.LEFT, padx=1)
+        self.sp_secs = tk.Spinbox(spin_row, from_=0, to=59, width=3, font=(FONT_MONO, 15, "bold"), justify="center", format="%02.0f", bd=2, relief="groove")
+        self.sp_secs.pack(side=tk.LEFT, ipady=3)
+        tk.Label(spin_row, text=" 초", font=(FONT_MAIN, 11), bg="#F8FAFC", fg="#334155").pack(side=tk.LEFT)
+
+        # 2행: 시간 누적 더하기 버튼 모음 (+1분, +5분, +10분, +30분, +1시간, +2시간, 현재시각)
+        btn_quick_row = tk.Frame(time_box, bg="#F8FAFC")
+        btn_quick_row.pack(fill=tk.X, pady=(2, 0))
+
+        tk.Label(btn_quick_row, text="시간 누적 더하기: ", font=(FONT_MAIN, 9), bg="#F8FAFC", fg="#64748B").pack(side=tk.LEFT, padx=(0, 4))
+        for text, delta_m in [("+1분", 1), ("+5분", 5), ("+10분", 10), ("+30분", 30), ("+1시간", 60), ("+2시간", 120)]:
+            b = tk.Button(btn_quick_row, text=text, font=(FONT_MAIN, 9), bg="#FFFFFF", fg="#1E293B", padx=5, pady=2, relief="groove", cursor="hand2", command=lambda dm=delta_m: self.add_time_minutes(dm))
+            b.pack(side=tk.LEFT, padx=2)
+
+        btn_now = tk.Button(btn_quick_row, text="↺ 현재시각", font=(FONT_MAIN, 9), bg="#E0F2FE", fg="#0369A1", padx=6, pady=2, relief="groove", cursor="hand2", command=self.reset_time_to_now)
+        btn_now.pack(side=tk.LEFT, padx=(6, 0))
 
         default_target = datetime.datetime.now() + datetime.timedelta(minutes=30)
         self.set_time_inputs(default_target.hour, default_target.minute, 0)
 
         # ---------------- 반복 실행 옵션 영역 ----------------
-        repeat_box = tk.LabelFrame(setting_card, text=" 🔁 주기적 반복 실행 옵션 ", bg="#F8FAFC", fg="#0F172A", font=("Segoe UI", 8, "bold"), padx=8, pady=4)
-        repeat_box.pack(fill=tk.X, pady=(4, 6))
+        repeat_box = tk.LabelFrame(setting_card, text=" 🔁 주기적 반복 실행 옵션 ", bg="#F8FAFC", fg="#0F172A", font=(FONT_MAIN, 8, "bold"), padx=8, pady=4)
+        repeat_box.pack(fill=tk.X, pady=(2, 6))
 
         self.chk_repeat = tk.BooleanVar(value=False)
         chk_rep_btn = tk.Checkbutton(
@@ -309,7 +324,7 @@ class AutoEnterQueueApp:
             text="이 작업을 주기적으로 반복 실행하기 (메신저 정기 알림 / 주기적 작업)",
             variable=self.chk_repeat,
             bg="#F8FAFC",
-            font=("Segoe UI", 9, "bold"),
+            font=(FONT_MAIN, 9),
             fg="#1D4ED8",
             command=self.toggle_repeat_ui
         )
@@ -320,8 +335,8 @@ class AutoEnterQueueApp:
 
         row_interval = tk.Frame(self.frame_repeat_detail, bg="#F8FAFC")
         row_interval.pack(anchor="w", pady=(0, 4))
-        tk.Label(row_interval, text="반복 주기:  매 ", font=("Segoe UI", 9), bg="#F8FAFC").pack(side=tk.LEFT)
-        self.sp_interval = tk.Spinbox(row_interval, from_=1, to=999, width=4, font=("Consolas", 10, "bold"), justify="center")
+        tk.Label(row_interval, text="반복 주기:  매 ", font=(FONT_MAIN, 9), bg="#F8FAFC").pack(side=tk.LEFT)
+        self.sp_interval = tk.Spinbox(row_interval, from_=1, to=999, width=4, font=(FONT_MONO, 10, "bold"), justify="center")
         self.sp_interval.pack(side=tk.LEFT)
         self.sp_interval.delete(0, "end")
         self.sp_interval.insert(0, "30")
@@ -329,29 +344,29 @@ class AutoEnterQueueApp:
         self.interval_unit_var = tk.StringVar(value="분")
         self.combo_unit = ttk.Combobox(row_interval, textvariable=self.interval_unit_var, values=["분", "시간"], width=4, state="readonly")
         self.combo_unit.pack(side=tk.LEFT, padx=(4, 4))
-        tk.Label(row_interval, text="마다 자동 재전송", font=("Segoe UI", 9), bg="#F8FAFC").pack(side=tk.LEFT)
+        tk.Label(row_interval, text="마다 자동 재전송", font=(FONT_MAIN, 9), bg="#F8FAFC").pack(side=tk.LEFT)
 
         row_end = tk.Frame(self.frame_repeat_detail, bg="#F8FAFC")
         row_end.pack(anchor="w")
 
         self.repeat_mode_var = tk.StringVar(value="infinite")
 
-        r_inf = tk.Radiobutton(row_end, text="무한 반복 (중지할 때까지)", variable=self.repeat_mode_var, value="infinite", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_inf = tk.Radiobutton(row_end, text="무한 반복 (중지할 때까지)", variable=self.repeat_mode_var, value="infinite", bg="#F8FAFC", font=(FONT_MAIN, 8), command=self.update_end_condition_ui)
         r_inf.pack(side=tk.LEFT, padx=(0, 10))
 
-        r_until = tk.Radiobutton(row_end, text="종료 시각:", variable=self.repeat_mode_var, value="until_time", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_until = tk.Radiobutton(row_end, text="종료 시각:", variable=self.repeat_mode_var, value="until_time", bg="#F8FAFC", font=(FONT_MAIN, 8), command=self.update_end_condition_ui)
         r_until.pack(side=tk.LEFT)
-        self.entry_until = tk.Entry(row_end, width=8, font=("Consolas", 9), justify="center")
+        self.entry_until = tk.Entry(row_end, width=8, font=(FONT_MONO, 9), justify="center")
         self.entry_until.insert(0, (datetime.datetime.now() + datetime.timedelta(hours=6)).strftime("%H:%M:%S"))
         self.entry_until.pack(side=tk.LEFT, padx=(2, 10))
 
-        r_count = tk.Radiobutton(row_end, text="횟수 제한: 총", variable=self.repeat_mode_var, value="max_count", bg="#F8FAFC", font=("Segoe UI", 8), command=self.update_end_condition_ui)
+        r_count = tk.Radiobutton(row_end, text="횟수 제한: 총", variable=self.repeat_mode_var, value="max_count", bg="#F8FAFC", font=(FONT_MAIN, 8), command=self.update_end_condition_ui)
         r_count.pack(side=tk.LEFT)
-        self.sp_max_count = tk.Spinbox(row_end, from_=1, to=9999, width=4, font=("Consolas", 9), justify="center")
+        self.sp_max_count = tk.Spinbox(row_end, from_=1, to=9999, width=4, font=(FONT_MONO, 9), justify="center")
         self.sp_max_count.delete(0, "end")
         self.sp_max_count.insert(0, "10")
         self.sp_max_count.pack(side=tk.LEFT, padx=(2, 2))
-        tk.Label(row_end, text="회 실행 후 종료", font=("Segoe UI", 8), bg="#F8FAFC").pack(side=tk.LEFT)
+        tk.Label(row_end, text="회 실행 후 종료", font=(FONT_MAIN, 8), bg="#F8FAFC").pack(side=tk.LEFT)
 
         self.toggle_repeat_ui()
 
@@ -364,7 +379,7 @@ class AutoEnterQueueApp:
             text="➕ 위 설정(메시지 + 시각 + 반복)을 작업 큐에 추가하기",
             bg="#2563EB",
             fg="#FFFFFF",
-            font=("Segoe UI", 10, "bold"),
+            font=(FONT_MAIN, 10, "bold"),
             pady=5,
             relief="flat",
             cursor="hand2",
@@ -377,7 +392,7 @@ class AutoEnterQueueApp:
             text="수정 취소",
             bg="#94A3B8",
             fg="#FFFFFF",
-            font=("Segoe UI", 9, "bold"),
+            font=(FONT_MAIN, 9),
             padx=12,
             pady=5,
             relief="flat",
@@ -385,7 +400,7 @@ class AutoEnterQueueApp:
         )
 
         # 4. 예약 작업 큐 테이블 (Treeview)
-        queue_card = tk.LabelFrame(main_frame, text=" 3. 예약 작업 큐 목록 (더블클릭하여 수정 가능) ", bg="#FFFFFF", fg="#1E293B", font=("Segoe UI", 9, "bold"), padx=8, pady=4)
+        queue_card = tk.LabelFrame(main_frame, text=" 3. 예약 작업 큐 목록 (더블클릭하여 수정 가능) ", bg="#FFFFFF", fg="#1E293B", font=(FONT_MAIN, 9, "bold"), padx=8, pady=4)
         queue_card.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
 
         columns = ("id", "time", "remain", "target", "repeat", "prompt", "status")
@@ -418,41 +433,41 @@ class AutoEnterQueueApp:
         q_btn_bar = tk.Frame(main_frame, bg="#F1F5F9")
         q_btn_bar.pack(fill=tk.X, pady=(0, 6))
 
-        btn_edit = tk.Button(q_btn_bar, text="✏️ 선택 작업 수정", font=("Segoe UI", 8, "bold"), bg="#E0E7FF", fg="#3730A3", padx=6, pady=2, command=self.start_edit_selected)
+        btn_edit = tk.Button(q_btn_bar, text="✏️ 선택 작업 수정", font=(FONT_MAIN, 8), bg="#E0E7FF", fg="#3730A3", padx=6, pady=2, command=self.start_edit_selected)
         btn_edit.pack(side=tk.LEFT, padx=(0, 6))
 
-        btn_del = tk.Button(q_btn_bar, text="🗑 선택 항목 삭제", font=("Segoe UI", 8), bg="#FEE2E2", fg="#991B1B", padx=6, pady=2, command=self.delete_selected_task)
+        btn_del = tk.Button(q_btn_bar, text="🗑 선택 항목 삭제", font=(FONT_MAIN, 8), bg="#FEE2E2", fg="#991B1B", padx=6, pady=2, command=self.delete_selected_task)
         btn_del.pack(side=tk.LEFT, padx=(0, 6))
 
-        btn_clear_done = tk.Button(q_btn_bar, text="🧹 완료 항목 정리", font=("Segoe UI", 8), bg="#F8FAFC", padx=6, pady=2, command=self.clear_completed_tasks)
+        btn_clear_done = tk.Button(q_btn_bar, text="🧹 완료 항목 정리", font=(FONT_MAIN, 8), bg="#F8FAFC", padx=6, pady=2, command=self.clear_completed_tasks)
         btn_clear_done.pack(side=tk.LEFT)
 
         self.chk_beep = tk.BooleanVar(value=True)
-        c1 = tk.Checkbutton(q_btn_bar, text="실행 5초 전 경고음", variable=self.chk_beep, bg="#F1F5F9", font=("Segoe UI", 8))
+        c1 = tk.Checkbutton(q_btn_bar, text="실행 5초 전 경고음", variable=self.chk_beep, bg="#F1F5F9", font=(FONT_MAIN, 8))
         c1.pack(side=tk.RIGHT)
 
         # 5. 현재 카운트다운 박스
         status_card = tk.Frame(main_frame, bg="#FFFFFF", bd=1, relief="solid", pady=4)
         status_card.pack(fill=tk.X, pady=(0, 6))
 
-        self.lbl_target_info = tk.Label(status_card, text="큐 실행 대기 중 (작업 추가 후 아래 [▶ 큐 순차 실행 시작] 클릭)", font=("Segoe UI", 8, "bold"), bg="#FFFFFF", fg="#64748B")
+        self.lbl_target_info = tk.Label(status_card, text="큐 실행 대기 중 (작업 추가 후 아래 [▶ 큐 순차 실행 시작] 클릭)", font=(FONT_MAIN, 8), bg="#FFFFFF", fg="#64748B")
         self.lbl_target_info.pack()
 
-        self.lbl_countdown = tk.Label(status_card, text="-- : -- : --", font=("Consolas", 18, "bold"), fg="#2563EB", bg="#FFFFFF")
+        self.lbl_countdown = tk.Label(status_card, text="-- : -- : --", font=(FONT_MONO, 18, "bold"), fg="#2563EB", bg="#FFFFFF")
         self.lbl_countdown.pack(pady=1)
 
         # 6. 제어 버튼
         ctrl_frame = tk.Frame(main_frame, bg="#F1F5F9")
         ctrl_frame.pack(fill=tk.X, pady=(0, 6))
 
-        self.btn_start = tk.Button(ctrl_frame, text="▶ 큐 순차 실행 시작", bg="#16A34A", fg="#FFFFFF", font=("Segoe UI", 10, "bold"), pady=6, relief="flat", cursor="hand2", command=self.start_queue_processing)
+        self.btn_start = tk.Button(ctrl_frame, text="▶ 큐 순차 실행 시작", bg="#16A34A", fg="#FFFFFF", font=(FONT_MAIN, 10, "bold"), pady=6, relief="flat", cursor="hand2", command=self.start_queue_processing)
         self.btn_start.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
 
-        self.btn_stop = tk.Button(ctrl_frame, text="⏹ 큐 실행 중지", bg="#CBD5E1", fg="#475569", font=("Segoe UI", 10, "bold"), pady=6, relief="flat", state=tk.DISABLED, command=self.stop_queue_processing)
+        self.btn_stop = tk.Button(ctrl_frame, text="⏹ 큐 실행 중지", bg="#CBD5E1", fg="#475569", font=(FONT_MAIN, 10, "bold"), pady=6, relief="flat", state=tk.DISABLED, command=self.stop_queue_processing)
         self.btn_stop.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(6, 0))
 
         # 7. 실시간 로그 창
-        self.log_text = tk.Text(main_frame, height=4, font=("Consolas", 8), bg="#FFFFFF", fg="#334155", relief="solid", bd=1)
+        self.log_text = tk.Text(main_frame, height=4, font=(FONT_MONO, 8), bg="#FFFFFF", fg="#334155", relief="solid", bd=1)
         self.log_text.pack(fill=tk.BOTH, expand=True)
         self.log("프로그램이 시작되었습니다. 작업을 등록하거나 더블클릭하여 수정할 수 있습니다.")
 
@@ -487,9 +502,27 @@ class AutoEnterQueueApp:
         self.sp_secs.delete(0, "end")
         self.sp_secs.insert(0, f"{s:02d}")
 
-    def quick_set_time(self, delta_minutes):
-        t = datetime.datetime.now() + datetime.timedelta(minutes=delta_minutes)
-        self.set_time_inputs(t.hour, t.minute, 0)
+    def add_time_minutes(self, delta_minutes):
+        """현재 스핀박스에 입력되어 있는 시각에 delta_minutes를 계속 누적하여 더합니다."""
+        try:
+            cur_h = int(self.sp_hours.get())
+            cur_m = int(self.sp_mins.get())
+            cur_s = int(self.sp_secs.get())
+        except ValueError:
+            now = datetime.datetime.now()
+            cur_h, cur_m, cur_s = now.hour, now.minute, 0
+
+        now = datetime.datetime.now()
+        base_dt = now.replace(hour=cur_h, minute=cur_m, second=cur_s, microsecond=0)
+        new_dt = base_dt + datetime.timedelta(minutes=delta_minutes)
+        self.set_time_inputs(new_dt.hour, new_dt.minute, new_dt.second)
+        self.log(f"시작 시각에 +{delta_minutes}분 누적 ➜ {new_dt.strftime('%H:%M:%S')}")
+
+    def reset_time_to_now(self):
+        """시작 시각을 현재 컴퓨터 시각으로 초기화합니다."""
+        now = datetime.datetime.now()
+        self.set_time_inputs(now.hour, now.minute, 0)
+        self.log(f"시작 시각을 현재 시각({now.strftime('%H:%M:%S')})으로 초기화했습니다.")
 
     def update_info_label(self):
         t_title = self.selected_title[:35] if self.selected_title else "없음"
